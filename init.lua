@@ -44,8 +44,7 @@ What is Kickstart?
 Kickstart Guide:
 
   TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
-
-    If you don't know what this means, type the following:
+   If you don't know what this means, type the following:
       - <escape key>
       - :
       - Tutor
@@ -102,7 +101,7 @@ vim.g.have_nerd_font = false
 vim.opt.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.opt.relativenumber = true
+vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
@@ -147,6 +146,8 @@ vim.opt.splitbelow = true
 --  and `:help 'listchars'`
 vim.opt.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
+vim.opt.tabstop = 4
+vim.opt.shiftwidth = 4
 
 -- Preview substitutions live, as you type!
 vim.opt.inccommand = 'split'
@@ -230,6 +231,16 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  'esensar/nvim-dev-container',
+  {
+    'echasnovski/mini.files',
+    version = '*',
+    opts = {},
+    config = function()
+      local MiniFiles = require 'mini.files'
+      vim.keymap.set('n', '<leader>od', MiniFiles.open, { desc = '[o]pen [d]irectory' })
+    end,
+  },
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -618,6 +629,8 @@ require('lazy').setup({
         -- ts_ls = {},
         --
 
+        -- denols = {},
+        ts_ls = {},
         lua_ls = {
           -- cmd = {...},
           -- filetypes = { ...},
@@ -650,6 +663,8 @@ require('lazy').setup({
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
+      local nvim_lsp = require 'lspconfig'
+
       require('mason-lspconfig').setup {
         handlers = {
           function(server_name)
@@ -658,7 +673,21 @@ require('lazy').setup({
             -- by the server configuration above. Useful when disabling
             -- certain features of an LSP (for example, turning off formatting for ts_ls)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
+            if server == 'ts_ls' then
+              print 'set up typescript'
+              nvim_lsp[server].setup {
+                on_attach = on_attach,
+                root_dir = nvim_lsp.util.root_pattern 'package.json',
+                single_file_support = false,
+              }
+              --      elseif server == 'denols' then
+              -- nvim_lsp[server].setup {
+              -- on_attach = on_attach,
+              --root_dir = nvim_lsp.util.root_pattern('deno.json', 'deno.jsonc'),
+              --}
+            else
+              nvim_lsp[server_name].setup(server)
+            end
           end,
         },
       }
@@ -921,7 +950,7 @@ require('lazy').setup({
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
